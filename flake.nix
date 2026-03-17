@@ -58,7 +58,7 @@
               group = "nixbox";
               home = cfg.dataDir;
               createHome = true;
-              description = "NixBox Service user";
+              description = "NixBox Service User";
             };
 
             users.groups.nixbox = { };
@@ -102,7 +102,7 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
-        python = pkgs.python3;
+        python = pkgs.python312;
 
         nixboxPkg = python.pkgs.buildPythonPackage {
           pname = "nixbox";
@@ -122,10 +122,11 @@
             apscheduler
             python-multipart
             aiofiles
+            aiosqlite
           ];
 
           meta = {
-            description = "Sandboxed agent management layer for NixOS";
+            description = "Sandboxed Agent Management Layer for NixOS";
             license = pkgs.lib.licenses.mit;
           };
         };
@@ -142,6 +143,7 @@
               apscheduler
               python-multipart
               aiofiles
+              aiosqlite
               # desarrollo
               pytest
               pytest-asyncio

@@ -5,7 +5,7 @@ build-backend = "setuptools.backends.legacy:build"
 [project]
 name = "nixbox"
 version = "0.1.0"
-description = "Sandboxed Agent Management Layer for NixOS"
+description = "Sandboxed agent management layer for NixOS"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi",
@@ -14,6 +14,7 @@ dependencies = [
     "apscheduler",
     "python-multipart",
     "aiofiles",
+    "aiosqlite",
 ]
 
 [project.scripts]
