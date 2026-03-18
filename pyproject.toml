@@ -15,6 +15,7 @@ dependencies = [
     "python-multipart",
     "aiofiles",
     "aiosqlite",
+    "psutil",
 ]
 
 [project.scripts]
@@ -23,3 +24,9 @@ nixbox = "nixbox.main:run"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["nixbox*"]
+
+[tool.setuptools.package-data]
+nixbox = ["templates/**/*.html"]
+
+[tool.setuptools.package-data]
+nixbox = ["templates/**/*.html"]
