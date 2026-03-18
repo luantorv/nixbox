@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Panel — nixbox{% endblock %}
+
+{% block breadcrumb %}
+<div class="breadcrumb">
+  <span>panel</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
+  <h1 style="font-size:1.1rem; font-weight:600;">Panel del servidor</h1>
+  <button
+    class="btn btn-ghost"
+    hx-get="/api/stats"
+    hx-target="#stats-grid"
+    hx-swap="outerHTML"
+    hx-indicator="#reload-indicator"
+  >
+    Recargar
+    <span id="reload-indicator" class="htmx-indicator" style="font-size:0.75rem;">…</span>
+  </button>
+</div>
+
+<div id="stats-grid">
+  {% include "partials/stats_grid.html" %}
+</div>
+{% endblock %}

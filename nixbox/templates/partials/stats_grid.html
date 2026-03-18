@@ -1,0 +1,26 @@
+<div id="stats-grid" class="stat-grid">
+  <div class="stat-box">
+    <div class="stat-label">CPU</div>
+    <div class="stat-value">{{ stats.cpu_percent }}%</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-label">RAM usada</div>
+    <div class="stat-value">{{ (stats.memory.used / 1024**3) | round(1) }} GB</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-label">RAM total</div>
+    <div class="stat-value">{{ (stats.memory.total / 1024**3) | round(1) }} GB</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-label">Disco usado</div>
+    <div class="stat-value">{{ (stats.disk.used / 1024**3) | round(1) }} GB</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-label">Disco libre</div>
+    <div class="stat-value">{{ (stats.disk.free / 1024**3) | round(1) }} GB</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-label">Carga (1m)</div>
+    <div class="stat-value">{{ stats.load_avg[0] | round(2) }}</div>
+  </div>
+</div>

@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Programar {{ task.name }} — nixbox{% endblock %}
+
+{% set active = 'tasks' %}
+
+{% block breadcrumb %}
+<div class="breadcrumb">
+  <a href="/tasks">tareas</a>
+  <span class="breadcrumb-sep">/</span>
+  <a href="/tasks/{{ task.id }}">{{ task.id }}</a>
+  <span class="breadcrumb-sep">/</span>
+  <span>programar</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<h1 style="font-size:1.1rem; font-weight:600; margin-bottom:1rem;">Programar: {{ task.name }}</h1>
+
+<div class="card">
+  <form method="post" action="/tasks/{{ task.id }}/schedule">
+
+    <div class="field">
+      <label>Modo</label>
+      <div style="display:flex; gap:1rem; margin-top:0.25rem;">
+        <label style="display:flex; align-items:center; gap:0.4rem; color:var(--text); cursor:pointer;">
+          <input type="radio" name="mode" value="once"
+            {% if not recurrence %}checked{% endif %}
+            onchange="document.getElementById('once-fields').style.display='block';
+                      document.getElementById('recurrent-fields').style.display='none';">
+          Ejecución única
+        </label>
+        <label style="display:flex; align-items:center; gap:0.4rem; color:var(--text); cursor:pointer;">
+          <input type="radio" name="mode" value="recurrent"
+            {% if recurrence %}checked{% endif %}
+            onchange="document.getElementById('once-fields').style.display='none';
+                      document.getElementById('recurrent-fields').style.display='block';">
+          Recurrente
+        </label>
+      </div>
+    </div>
+
+    <div id="once-fields" {% if recurrence %}style="display:none;"{% endif %}>
+      <div class="field">
+        <label for="scheduled_at">Fecha y hora</label>
+        <input type="datetime-local" id="scheduled_at" name="scheduled_at"
+          value="{{ task.scheduled_at.strftime('%Y-%m-%dT%H:%M') if task.scheduled_at else '' }}">
+      </div>
+    </div>
+
+    <div id="recurrent-fields" {% if not recurrence %}style="display:none;"{% endif %}>
+      <div class="field">
+        <label for="cron_string">Cron expression</label>
+        <input type="text" id="cron_string" name="cron_string"
+          placeholder="Ej: 0 8 * * 1-5  (lun-vie a las 8:00)"
+          value="{{ recurrence.cron_string if recurrence else '' }}">
+        <span style="font-size:0.75rem; color:var(--muted); margin-top:0.25rem; display:block;">
+          Formato: minuto hora día mes día_semana
+        </span>
+      </div>
+
+      {% if recurrence and recurrence.enabled %}
+      <form method="post" action="/tasks/{{ task.id }}/schedule/disable"
+            style="margin-bottom:0.75rem;">
+        <button type="submit" class="btn btn-warn">Pausar recurrencia</button>
+      </form>
+      {% endif %}
+    </div>
+
+    <div class="btn-row">
+      <button type="submit" class="btn btn-primary">Guardar</button>
+      <a href="/tasks/{{ task.id }}" class="btn btn-ghost">Cancelar</a>
+    </div>
+
+  </form>
+</div>
+{% endblock %}

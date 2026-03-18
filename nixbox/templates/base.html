@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}nixbox{% endblock %}</title>
+  <script src="https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0f1117;
+      --surface:  #1a1d27;
+      --border:   #2a2d3a;
+      --text:     #e2e4ed;
+      --muted:    #6b7280;
+      --accent:   #7c6af7;
+      --accent-h: #9585ff;
+      --ok:       #34d399;
+      --warn:     #fbbf24;
+      --err:      #f87171;
+      --run:      #60a5fa;
+      --font-mono: "JetBrains Mono", "Fira Mono", "Cascadia Code", monospace;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, sans-serif;
+      font-size: 0.9rem;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { color: var(--accent-h); text-decoration: underline; }
+
+    /* ---- topbar ---- */
+    .topbar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 1.5rem;
+      height: 3rem;
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .topbar-brand {
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--accent);
+      letter-spacing: 0.05em;
+    }
+    .topbar-nav { display: flex; gap: 0.25rem; margin-left: auto; }
+    .topbar-nav a {
+      padding: 0.3rem 0.75rem;
+      border-radius: 0.375rem;
+      color: var(--muted);
+      font-size: 0.85rem;
+      transition: background 0.15s, color 0.15s;
+    }
+    .topbar-nav a:hover,
+    .topbar-nav a.active { background: var(--border); color: var(--text); text-decoration: none; }
+
+    /* ---- breadcrumb ---- */
+    .breadcrumb {
+      padding: 0.6rem 1.5rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .breadcrumb a { color: var(--muted); }
+    .breadcrumb a:hover { color: var(--text); text-decoration: none; }
+    .breadcrumb span { color: var(--text); }
+    .breadcrumb-sep { color: var(--border); }
+
+    /* ---- main content ---- */
+    .content { padding: 1.5rem; max-width: 960px; width: 100%; margin: 0 auto; flex: 1; }
+
+    /* ---- cards ---- */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+    }
+    .card-title {
+      font-weight: 600;
+      font-size: 0.95rem;
+      margin-bottom: 0.75rem;
+      color: var(--text);
+    }
+
+    /* ---- buttons ---- */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.35rem 0.85rem;
+      border-radius: 0.375rem;
+      border: 1px solid transparent;
+      font-size: 0.82rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: opacity 0.15s;
+      text-decoration: none;
+    }
+    .btn:hover { opacity: 0.85; text-decoration: none; }
+    .btn-primary  { background: var(--accent);  color: #fff; }
+    .btn-ghost    { background: transparent; border-color: var(--border); color: var(--text); }
+    .btn-danger   { background: var(--err);    color: #fff; }
+    .btn-warn     { background: var(--warn);   color: #111; }
+    .btn-row      { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.75rem; }
+
+    /* ---- status badge ---- */
+    .badge {
+      display: inline-block;
+      padding: 0.15rem 0.55rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+    }
+    .badge-pending   { background: #2a2d3a; color: var(--muted); }
+    .badge-running   { background: #1e3a5f; color: var(--run); }
+    .badge-completed { background: #1a3a2e; color: var(--ok); }
+    .badge-failed    { background: #3a1e1e; color: var(--err); }
+    .badge-cancelled { background: #2a2a1e; color: var(--warn); }
+
+    /* ---- table ---- */
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    th {
+      text-align: left;
+      padding: 0.5rem 0.75rem;
+      color: var(--muted);
+      font-weight: 500;
+      border-bottom: 1px solid var(--border);
+    }
+    td { padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+
+    /* ---- form ---- */
+    .field { margin-bottom: 1rem; }
+    label { display: block; font-size: 0.82rem; color: var(--muted); margin-bottom: 0.3rem; }
+    input[type="text"],
+    input[type="datetime-local"],
+    select,
+    textarea {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 0.375rem;
+      color: var(--text);
+      padding: 0.5rem 0.75rem;
+      font-size: 0.85rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+    textarea { resize: vertical; min-height: 6rem; }
+
+    /* ---- log viewer ---- */
+    .log-viewer {
+      background: #0a0c12;
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      padding: 1rem;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      line-height: 1.6;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+      max-height: 70vh;
+      overflow-y: auto;
+    }
+    .log-stdout { color: var(--text); }
+    .log-stderr { color: var(--warn); }
+
+    /* ---- stat grid ---- */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    .stat-box {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 0.375rem;
+      padding: 0.75rem 1rem;
+    }
+    .stat-label { font-size: 0.75rem; color: var(--muted); margin-bottom: 0.2rem; }
+    .stat-value { font-size: 1.1rem; font-weight: 600; font-family: var(--font-mono); }
+
+    /* ---- file list ---- */
+    .file-list { list-style: none; }
+    .file-list li {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.85rem;
+      font-family: var(--font-mono);
+    }
+    .file-list li:last-child { border-bottom: none; }
+
+    /* ---- section title ---- */
+    .section-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
+      margin-top: 1.25rem;
+    }
+
+    /* ---- empty state ---- */
+    .empty { color: var(--muted); font-size: 0.85rem; padding: 1.5rem 0; text-align: center; }
+
+    /* ---- htmx indicator ---- */
+    .htmx-indicator { opacity: 0; transition: opacity 0.2s; }
+    .htmx-request .htmx-indicator { opacity: 1; }
+  </style>
+</head>
+<body>
+
+<nav class="topbar">
+  <span class="topbar-brand">nixbox</span>
+  <div class="topbar-nav">
+    <a href="/" {% if active == 'home' %}class="active"{% endif %}>Panel</a>
+    <a href="/tasks" {% if active == 'tasks' %}class="active"{% endif %}>Tareas</a>
+  </div>
+</nav>
+
+{% block breadcrumb %}{% endblock %}
+
+<main class="content">
+  {% block content %}{% endblock %}
+</main>
+
+</body>
+</html>

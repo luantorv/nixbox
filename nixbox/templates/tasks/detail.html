@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}{{ task.name }} — nixbox{% endblock %}
+
+{% set active = 'tasks' %}
+
+{% block breadcrumb %}
+<div class="breadcrumb">
+  <a href="/tasks">tareas</a>
+  <span class="breadcrumb-sep">/</span>
+  <span>{{ task.id }}</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div style="display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:1rem; gap:1rem; flex-wrap:wrap;">
+  <div>
+    <h1 style="font-size:1.1rem; font-weight:600;">{{ task.name }}</h1>
+    <div style="margin-top:0.3rem; display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+      <span class="badge badge-{{ task.status }}">{{ task.status }}</span>
+      <code style="font-size:0.78rem; color:var(--muted);">{{ task.sandbox_type }}</code>
+      <span style="font-size:0.78rem; color:var(--muted);">creada {{ task.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+      {% if task.recurrence %}
+        <span style="font-size:0.78rem; color:var(--accent);">
+          recurrente: <code>{{ task.recurrence.cron_string }}</code>
+          {% if not task.recurrence.enabled %}(pausada){% endif %}
+        </span>
+      {% elif task.scheduled_at %}
+        <span style="font-size:0.78rem; color:var(--warn);">
+          programada: {{ task.scheduled_at.strftime('%Y-%m-%d %H:%M') }}
+        </span>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="btn-row" style="margin-top:0;">
+    {% if task.status == 'running' %}
+      <form method="post" action="/tasks/{{ task.id }}/stop">
+        <button class="btn btn-warn">Parar</button>
+      </form>
+    {% else %}
+      <form method="post" action="/tasks/{{ task.id }}/run">
+        <button class="btn btn-primary">Ejecutar</button>
+      </form>
+    {% endif %}
+    <a class="btn btn-ghost" href="/tasks/{{ task.id }}/schedule">Programar</a>
+    <form method="post" action="/tasks/{{ task.id }}/delete"
+          onsubmit="return confirm('Eliminar tarea «{{ task.name }}»?')">
+      <button class="btn btn-danger">Eliminar</button>
+    </form>
+  </div>
+</div>
+
+<div class="btn-row" style="margin-bottom:1.25rem;">
+  <a class="btn btn-ghost" href="/tasks/{{ task.id }}/inputs">Inputs</a>
+  <a class="btn btn-ghost" href="/tasks/{{ task.id }}/outputs">Outputs</a>
+  <a class="btn btn-ghost" href="/tasks/{{ task.id }}/logs">Logs</a>
+  {% if task.status == 'running' %}
+    <a class="btn btn-ghost" href="/tasks/{{ task.id }}/logs/stream">Stream</a>
+  {% endif %}
+</div>
+
+<p class="section-title">Historial de interacciones</p>
+
+{% if interactions %}
+  {% for interaction in interactions %}
+  <div class="card" style="margin-bottom:0.5rem; border-color: {% if interaction.role == 'user' %}var(--border){% else %}var(--accent){% endif %}20;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+      <span style="font-size:0.78rem; font-weight:600; color: {% if interaction.role == 'user' %}var(--text){% else %}var(--accent){% endif %};">
+        {{ 'Usuario' if interaction.role == 'user' else 'Agente' }}
+      </span>
+      <span style="font-size:0.75rem; color:var(--muted);">{{ interaction.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+    </div>
+    <p style="font-size:0.85rem; line-height:1.6; white-space:pre-wrap;">{{ interaction.content }}</p>
+  </div>
+  {% endfor %}
+{% else %}
+  <p class="empty">Sin interacciones aún.</p>
+{% endif %}
+
+{% if task.status != 'running' %}
+<p class="section-title" style="margin-top:1.5rem;">Enviar prompt</p>
+<div class="card">
+  <form method="post" action="/tasks/{{ task.id }}/prompt">
+    <div class="field">
+      <textarea name="content" required
+        placeholder="Continuar, corregir o expandir la tarea…"></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">Enviar y ejecutar</button>
+  </form>
+</div>
+{% endif %}
+{% endblock %}

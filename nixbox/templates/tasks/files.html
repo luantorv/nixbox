@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}{{ section|capitalize }} — {{ task_id }} — nixbox{% endblock %}
+
+{% set active = 'tasks' %}
+
+{% block breadcrumb %}
+<div class="breadcrumb">
+  <a href="/tasks">tareas</a>
+  <span class="breadcrumb-sep">/</span>
+  <a href="/tasks/{{ task_id }}">{{ task_id }}</a>
+  <span class="breadcrumb-sep">/</span>
+  <span>{{ section }}</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
+  <h1 style="font-size:1.1rem; font-weight:600;">{{ section|capitalize }}</h1>
+  {% if files and (section == 'inputs' or not task_running) %}
+  <a class="btn btn-ghost" href="/tasks/{{ task_id }}/{{ section }}/download-all">
+    Descargar todo
+  </a>
+  {% endif %}
+</div>
+
+{% if task_running and section == 'outputs' %}
+<div style="font-size:0.82rem; color:var(--warn); margin-bottom:1rem; padding:0.5rem 0.75rem; background:#2a220a; border-radius:0.375rem; border:1px solid #3a3010;">
+  La tarea está en ejecución. Los archivos estarán disponibles para descargar una vez que finalice.
+</div>
+{% endif %}
+
+<div class="card">
+  {% if files %}
+  <ul class="file-list">
+    {% for filename in files %}
+    <li>
+      <span>{{ filename }}</span>
+      {% if section == 'inputs' or not task_running %}
+      <a class="btn btn-ghost" style="padding:0.2rem 0.6rem; font-size:0.78rem;"
+         href="/tasks/{{ task_id }}/{{ section }}/{{ filename }}">
+        Descargar
+      </a>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="empty">No hay archivos.</p>
+  {% endif %}
+</div>
+{% endblock %}

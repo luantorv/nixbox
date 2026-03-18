@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Tareas — nixbox{% endblock %}
+
+{% set active = 'tasks' %}
+
+{% block breadcrumb %}
+<div class="breadcrumb">
+  <span>tareas</span>
+</div>
+{% endblock %}
+
+{% macro status_badge(status) %}
+<span class="badge badge-{{ status }}">{{ status }}</span>
+{% endmacro %}
+
+{% macro task_row(task) %}
+<tr>
+  <td><a href="/tasks/{{ task.id }}">{{ task.name }}</a></td>
+  <td><code style="font-size:0.78rem; color:var(--muted);">{{ task.sandbox_type }}</code></td>
+  <td>{{ status_badge(task.status) }}</td>
+  <td style="color:var(--muted); font-size:0.8rem;">{{ task.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+  <td>
+    <div style="display:flex; gap:0.35rem;">
+      {% if task.status == 'running' %}
+        <form method="post" action="/tasks/{{ task.id }}/stop">
+          <button class="btn btn-warn" type="submit">Parar</button>
+        </form>
+      {% else %}
+        <form method="post" action="/tasks/{{ task.id }}/run">
+          <button class="btn btn-primary" type="submit">Ejecutar</button>
+        </form>
+      {% endif %}
+      <a class="btn btn-ghost" href="/tasks/{{ task.id }}/schedule">Programar</a>
+      <form method="post" action="/tasks/{{ task.id }}/delete"
+            onsubmit="return confirm('Eliminar tarea «{{ task.name }}»?')">
+        <button class="btn btn-danger" type="submit">Eliminar</button>
+      </form>
+    </div>
+  </td>
+</tr>
+{% endmacro %}
+
+{% block content %}
+<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
+  <h1 style="font-size:1.1rem; font-weight:600;">Tareas</h1>
+  <a class="btn btn-primary" href="/tasks/new">Nueva tarea</a>
+</div>
+
+{% if running %}
+<p class="section-title">En ejecución</p>
+<div class="card" style="padding:0; overflow:hidden;">
+  <table>
+    <thead>
+      <tr>
+        <th>Nombre</th><th>Sandbox</th><th>Estado</th><th>Creada</th><th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for task in running %}{{ task_row(task) }}{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<p class="section-title">Historial</p>
+{% if other %}
+<div class="card" style="padding:0; overflow:hidden;">
+  <table>
+    <thead>
+      <tr>
+        <th>Nombre</th><th>Sandbox</th><th>Estado</th><th>Creada</th><th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for task in other %}{{ task_row(task) }}{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="empty">No hay tareas aún.</p>
+{% endif %}
+{% endblock %}

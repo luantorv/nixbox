@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Stream — {{ task.id }} — nixbox{% endblock %}
+
+{% set active = 'tasks' %}
+
+{% block breadcrumb %}
+<div class="breadcrumb">
+  <a href="/tasks">tareas</a>
+  <span class="breadcrumb-sep">/</span>
+  <a href="/tasks/{{ task.id }}">{{ task.id }}</a>
+  <span class="breadcrumb-sep">/</span>
+  <a href="/tasks/{{ task.id }}/logs">logs</a>
+  <span class="breadcrumb-sep">/</span>
+  <span>stream</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
+  <h1 style="font-size:1.1rem; font-weight:600;">Stream — {{ task.name }}</h1>
+  <div style="display:flex; align-items:center; gap:0.75rem;">
+    <span id="status-indicator" style="font-size:0.78rem; color:var(--ok);">Conectado</span>
+    <a class="btn btn-ghost" href="/tasks/{{ task.id }}/logs">Ver log completo</a>
+  </div>
+</div>
+
+<div id="log-viewer" class="log-viewer" style="min-height:60vh;"></div>
+
+<script>
+  const viewer = document.getElementById('log-viewer');
+  const indicator = document.getElementById('status-indicator');
+  let lastId = 0;
+  let autoScroll = true;
+
+  viewer.addEventListener('scroll', () => {
+    const atBottom = viewer.scrollHeight - viewer.scrollTop - viewer.clientHeight < 32;
+    autoScroll = atBottom;
+  });
+
+  function appendLine(stream, content) {
+    const span = document.createElement('span');
+    span.className = 'log-' + stream;
+    // Extraer stream del prefijo "[stdout] " o "[stderr] "
+    const match = content.match(/^\[(stdout|stderr)\] (.*)/s);
+    if (match) {
+      span.className = 'log-' + match[1];
+      span.textContent = match[2];
+    } else {
+      span.textContent = content;
+    }
+    span.textContent += '\n';
+    viewer.appendChild(span);
+    if (autoScroll) viewer.scrollTop = viewer.scrollHeight;
+  }
+
+  const url = `/tasks/{{ task.id }}/logs/stream/sse?last_id=${lastId}`;
+  const es = new EventSource(url);
+
+  es.onmessage = (e) => {
+    if (!e.data || e.data.trim() === '') return;
+    lastId = parseInt(e.lastEventId) || lastId;
+    appendLine('stdout', e.data);
+  };
+
+  es.onerror = () => {
+    indicator.textContent = 'Desconectado';
+    indicator.style.color = 'var(--err)';
+    es.close();
+  };
+</script>
+{% endblock %}

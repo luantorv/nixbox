@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Nueva tarea — nixbox{% endblock %}
+
+{% set active = 'tasks' %}
+
+{% block breadcrumb %}
+<div class="breadcrumb">
+  <a href="/tasks">tareas</a>
+  <span class="breadcrumb-sep">/</span>
+  <span>nueva</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<h1 style="font-size:1.1rem; font-weight:600; margin-bottom:1rem;">Nueva tarea</h1>
+
+<div class="card">
+  <form method="post" action="/tasks/new" enctype="multipart/form-data">
+
+    <div class="field">
+      <label for="name">Nombre</label>
+      <input type="text" id="name" name="name" required placeholder="Ej: Resumen de noticias">
+    </div>
+
+    <div class="field">
+      <label for="sandbox_type">Tipo de sandbox</label>
+      <select id="sandbox_type" name="sandbox_type" required>
+        {% for st in sandbox_types %}
+        <option value="{{ st }}">{{ st }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="initial_prompt">Prompt inicial</label>
+      <textarea id="initial_prompt" name="initial_prompt" required
+        placeholder="Describí la tarea que debe realizar el agente…"></textarea>
+    </div>
+
+    <div class="field">
+      <label for="files">Archivos de input <span style="color:var(--muted);">(opcional)</span></label>
+      <input type="file" id="files" name="files" multiple
+        style="padding:0.4rem 0; border:none; background:transparent; color:var(--text);">
+    </div>
+
+    <div class="btn-row">
+      <button type="submit" class="btn btn-primary">Crear tarea</button>
+      <a href="/tasks" class="btn btn-ghost">Cancelar</a>
+    </div>
+
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Logs — {{ task.id }} — nixbox{% endblock %}
+
+{% set active = 'tasks' %}
+
+{% block breadcrumb %}
+<div class="breadcrumb">
+  <a href="/tasks">tareas</a>
+  <span class="breadcrumb-sep">/</span>
+  <a href="/tasks/{{ task.id }}">{{ task.id }}</a>
+  <span class="breadcrumb-sep">/</span>
+  <span>logs</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
+  <h1 style="font-size:1.1rem; font-weight:600;">Logs — {{ task.name }}</h1>
+  {% if task.status == 'running' %}
+  <a class="btn btn-primary" href="/tasks/{{ task.id }}/logs/stream">Ver stream en vivo</a>
+  {% endif %}
+</div>
+
+<div class="log-viewer">
+{% if entries %}
+  {% for entry in entries %}
+<span class="log-{{ entry.stream }}">{{ entry.content }}</span>
+  {% endfor %}
+{% else %}
+  <span style="color:var(--muted);">Sin entradas de log.</span>
+{% endif %}
+</div>
+{% endblock %}
