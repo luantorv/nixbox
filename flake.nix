@@ -123,6 +123,7 @@
             python-multipart
             aiofiles
             aiosqlite
+            psutil
           ];
 
           meta = {
@@ -144,6 +145,7 @@
               python-multipart
               aiofiles
               aiosqlite
+              psutil
               # desarrollo
               pytest
               pytest-asyncio
