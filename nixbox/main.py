@@ -407,8 +407,90 @@ async def task_output_download(
     return FileResponse(path, filename=filename)
 
 # ---------------------------------------------------------------------------
+# Descarga zip de inputs/outputs completos
+# ---------------------------------------------------------------------------
+
+@app.get("/tasks/{task_id}/inputs/download-all")
+async def task_inputs_download_all(
+    task_id: int,
+    session: AsyncSession = Depends(get_session),
+):
+    await _get_task_or_404(task_id, session)
+    return await _zip_directory(settings.inputs_dir(task_id), f"inputs-{task_id}.zip")
+
+@app.get("/tasks/{task_id}/outputs/download-all")
+async def task_outputs_download_all(
+    task_id: int,
+    session: AsyncSession = Depends(get_session),
+):
+    task = await _get_task_or_404(task_id, session)
+    if task.status == TaskStatus.running:
+        raise HTTPException(status_code=409, detail="La tarea está en ejecución")
+    return await _zip_directory(settings.outputs_dir(task_id), f"outputs-{task_id}.zip")
+
+async def _zip_directory(directory: Path, zip_name: str) -> StreamingResponse:
+    if not directory.exists() or not any(directory.iterdir()):
+        raise HTTPException(status_code=404, detail="No hay archivos")
+
+    import io
+    import zipfile
+
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        for file in directory.iterdir():
+            if file.is_file():
+                zf.write(file, file.name)
+    buf.seek(0)
+
+    return StreamingResponse(
+        buf,
+        media_type="application/zip",
+        headers={"Content-Disposition": f"attachment; filename={zip_name}"},
+    )
+
+# ---------------------------------------------------------------------------
 # /tasks/{task_id}/logs y /logs/stream
 # ---------------------------------------------------------------------------
+
+@app.get("/tasks/{task_id}/inputs/download-all")
+async def task_inputs_download_all(
+    task_id: int,
+    session: AsyncSession = Depends(get_session),
+):
+    await _get_task_or_404(task_id, session)
+    return _zip_response(settings.inputs_dir(task_id), f"task-{task_id}-inputs.zip")
+
+
+@app.get("/tasks/{task_id}/outputs/download-all")
+async def task_outputs_download_all(
+    task_id: int,
+    session: AsyncSession = Depends(get_session),
+):
+    task = await _get_task_or_404(task_id, session)
+    if task.status == TaskStatus.running:
+        raise HTTPException(status_code=409, detail="La tarea está en ejecución")
+    return _zip_response(settings.outputs_dir(task_id), f"task-{task_id}-outputs.zip")
+
+
+def _zip_response(directory: Path, filename: str):
+    import io
+    import zipfile
+
+    if not directory.exists():
+        raise HTTPException(status_code=404, detail="No hay archivos")
+
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        for f in directory.iterdir():
+            if f.is_file():
+                zf.write(f, f.name)
+    buf.seek(0)
+
+    return StreamingResponse(
+        buf,
+        media_type="application/zip",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
 
 @app.get("/tasks/{task_id}/logs", response_class=HTMLResponse)
 async def task_logs(
