@@ -6,7 +6,7 @@ build-backend = "setuptools.backends.legacy:build"
 name = "nixbox"
 version = "0.1.0"
 description = "Sandboxed agent management layer for NixOS"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 dependencies = [
     "fastapi",
     "uvicorn",
@@ -16,17 +16,19 @@ dependencies = [
     "aiofiles",
     "aiosqlite",
     "psutil",
+    "httpx",
+    "anthropic",
+    "openai",
+    "google-genai",
+    "markdown-it-py",
 ]
 
 [project.scripts]
-nixbox = "nixbox.main:run"
+nixbox = "layer1.main:run"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["nixbox*"]
+include = ["layer1*", "layer2*"]
 
 [tool.setuptools.package-data]
-nixbox = ["templates/**/*.html"]
-
-[tool.setuptools.package-data]
-nixbox = ["templates/**/*.html"]
+layer1 = ["templates/**/*.html"]

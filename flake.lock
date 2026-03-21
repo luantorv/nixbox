@@ -1,25 +1,5 @@
 {
   "nodes": {
-    "agent-sandbox": {
-      "inputs": {
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1773501838,
-        "narHash": "sha256-3Fjn1OIIrHkwuZMvfZa9jmts8uJz2ng35J7zt+JUpuk=",
-        "owner": "archie-judd",
-        "repo": "agent-sandbox.nix",
-        "rev": "e1a92023aa35a6dc4e15122c2305302dd4d255f1",
-        "type": "github"
-      },
-      "original": {
-        "owner": "archie-judd",
-        "repo": "agent-sandbox.nix",
-        "type": "github"
-      }
-    },
     "flake-utils": {
       "inputs": {
         "systems": "systems"
@@ -56,7 +36,6 @@
     },
     "root": {
       "inputs": {
-        "agent-sandbox": "agent-sandbox",
         "flake-utils": "flake-utils",
         "nixpkgs": "nixpkgs"
       }

@@ -4,18 +4,14 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
     flake-utils.url = "github:numtide/flake-utils";
-    agent-sandbox = {
-      url = "github:archie-judd/agent-sandbox.nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 
-  outputs = { self, nixpkgs, flake-utils, agent-sandbox }:
+  outputs = { self, nixpkgs, flake-utils }:
     let
       nixosModule = { config, lib, pkgs, ... }:
         let
           cfg = config.services.nixbox;
-          python = pkgs.python3;
+          python = pkgs.python312;
           nixboxPkg = self.packages.${pkgs.system}.default;
         in
         {
@@ -42,13 +38,38 @@
 
             tokenFile = lib.mkOption {
               type = lib.types.path;
-              description = "Path to the file containing API tokens, readable by the nixbox user.";
+              description = "Path to the file containing API tokens in KEY=VALUE format.";
             };
 
-            sandboxPackages = lib.mkOption {
-              type = lib.types.attrsOf lib.types.package;
-              default = { };
-              description = "Attribute set of sandbox binaries produced by agent-sandbox.nix, keyed by sandbox type name.";
+            sandboxProfiles = lib.mkOption {
+              type = lib.types.attrsOf (lib.types.submodule {
+                options = {
+                  orchestratorModel = lib.mkOption {
+                    type = lib.types.submodule {
+                      options = {
+                        provider = lib.mkOption { type = lib.types.str; };
+                        model    = lib.mkOption { type = lib.types.str; };
+                      };
+                    };
+                  };
+                  executorModel = lib.mkOption {
+                    type = lib.types.submodule {
+                      options = {
+                        provider = lib.mkOption { type = lib.types.str; };
+                        model    = lib.mkOption { type = lib.types.str; };
+                      };
+                    };
+                  };
+                  allowedDomains  = lib.mkOption { type = lib.types.listOf lib.types.str; default = []; };
+                  allowedActions  = lib.mkOption { type = lib.types.listOf lib.types.str; default = []; };
+                  allowedLanguages = lib.mkOption {
+                    type = lib.types.listOf lib.types.str;
+                    default = [ "python" "javascript" ];
+                  };
+                };
+              });
+              default = {};
+              description = "Sandbox profiles available to nixbox tasks.";
             };
           };
 
@@ -61,7 +82,7 @@
               description = "NixBox Service User";
             };
 
-            users.groups.nixbox = { };
+            users.groups.nixbox = {};
 
             systemd.services.nixbox = {
               description = "NixBox Agent Management Service";
@@ -69,12 +90,19 @@
               wantedBy = [ "multi-user.target" ];
 
               environment = {
-                NIXBOX_DATA_DIR = cfg.dataDir;
+                NIXBOX_DATA_DIR  = cfg.dataDir;
                 NIXBOX_TOKEN_FILE = cfg.tokenFile;
-                NIXBOX_SANDBOX_BINS = lib.concatStringsSep ","
-                  (lib.mapAttrsToList (name: pkg: "${name}:${pkg}/bin/${name}") cfg.sandboxPackages);
-                NIXBOX_HOST = cfg.host;
-                NIXBOX_PORT = toString cfg.port;
+                NIXBOX_HOST      = cfg.host;
+                NIXBOX_PORT      = toString cfg.port;
+                NIXBOX_PROFILES  = builtins.toJSON (
+                  lib.mapAttrs (_: p: {
+                    orchestrator_model = { inherit (p.orchestratorModel) provider model; };
+                    executor_model     = { inherit (p.executorModel) provider model; };
+                    allowed_domains    = p.allowedDomains;
+                    allowed_actions    = p.allowedActions;
+                    allowed_languages  = p.allowedLanguages;
+                  }) cfg.sandboxProfiles
+                );
               };
 
               serviceConfig = {
@@ -124,6 +152,11 @@
             aiofiles
             aiosqlite
             psutil
+            httpx
+            anthropic
+            openai
+            google-generativeai
+            markdown-it-py
           ];
 
           meta = {
@@ -146,11 +179,16 @@
               aiofiles
               aiosqlite
               psutil
-              # desarrollo
+              httpx
+              anthropic
+              openai
+              google-generativeai
+              markdown-it-py
               pytest
               pytest-asyncio
               httpx
             ]))
+            pkgs.nodejs_22
           ];
         };
       });
