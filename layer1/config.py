@@ -1,9 +1,13 @@
+from __future__ import annotations
+
+import json
 import os
 from functools import cached_property
 from pathlib import Path
 
 
 class Settings:
+
     @cached_property
     def data_dir(self) -> str:
         return os.environ.get("NIXBOX_DATA_DIR", "/var/lib/nixbox")
@@ -21,22 +25,27 @@ class Settings:
         return int(os.environ.get("NIXBOX_PORT", "8000"))
 
     @cached_property
-    def sandbox_bins(self) -> dict[str, str]:
+    def sandbox_profiles(self) -> dict[str, object]:
         """
-        Parses NIXBOX_SANDBOX_BINS env var.
-        Format: "name1:/nix/store/.../bin/name1,name2:/nix/store/.../bin/name2"
-        Returns: {"name1": "/nix/store/.../bin/name1", ...}
+        Parsea NIXBOX_PROFILES y devuelve un dict con los nombres de perfil
+        como claves. El valor es el dict crudo; layer2.profile.get_profile()
+        es quien construye el SandboxProfile tipado a partir de él.
+
+        Solo se usa en layer1 para validar que el sandbox_type de una tarea
+        sea conocido, y para poblar el selector en /tasks/new.
         """
-        raw = os.environ.get("NIXBOX_SANDBOX_BINS", "")
-        if not raw:
+        raw = os.environ.get("NIXBOX_PROFILES", "{}")
+        try:
+            data = json.loads(raw)
+            if not isinstance(data, dict):
+                return {}
+            return data
+        except json.JSONDecodeError:
             return {}
-        result = {}
-        for entry in raw.split(","):
-            entry = entry.strip()
-            if ":" in entry:
-                name, path = entry.split(":", 1)
-                result[name.strip()] = path.strip()
-        return result
+
+    # -----------------------------------------------------------------------
+    # Paths por tarea
+    # -----------------------------------------------------------------------
 
     def tasks_dir(self, task_id: int) -> Path:
         return Path(self.data_dir) / "tasks" / str(task_id)
@@ -46,6 +55,10 @@ class Settings:
 
     def outputs_dir(self, task_id: int) -> Path:
         return self.tasks_dir(task_id) / "outputs"
+
+    def work_dir(self, task_id: int) -> Path:
+        """Directorio temporal para ejecución de código en el sandbox."""
+        return self.tasks_dir(task_id) / "work"
 
 
 settings = Settings()

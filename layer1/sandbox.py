@@ -52,7 +52,7 @@ async def run_task(task: Task, session: AsyncSession) -> None:
 
         inputs_dir  = settings.inputs_dir(task.id)
         outputs_dir = settings.outputs_dir(task.id)
-        workdir     = settings.tasks_dir(task.id) / "work"
+        workdir     = settings.work_dir(task.id)
         workdir.mkdir(parents=True, exist_ok=True)
         outputs_dir.mkdir(parents=True, exist_ok=True)
 
