@@ -21,7 +21,7 @@
   <td style="color:var(--muted); font-size:0.8rem;">{{ task.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
   <td>
     <div style="display:flex; gap:0.35rem;">
-      {% if task.status == 'running' %}
+      {% if task.status in ['planning', 'awaiting_approval', 'running'] %}
         <form method="post" action="/tasks/{{ task.id }}/stop">
           <button class="btn btn-warn" type="submit">Parar</button>
         </form>
@@ -29,8 +29,8 @@
         <form method="post" action="/tasks/{{ task.id }}/run">
           <button class="btn btn-primary" type="submit">Ejecutar</button>
         </form>
+        <a class="btn btn-ghost" href="/tasks/{{ task.id }}/schedule">Programar</a>
       {% endif %}
-      <a class="btn btn-ghost" href="/tasks/{{ task.id }}/schedule">Programar</a>
       <form method="post" action="/tasks/{{ task.id }}/delete"
             onsubmit="return confirm('Eliminar tarea «{{ task.name }}»?')">
         <button class="btn btn-danger" type="submit">Eliminar</button>
@@ -46,17 +46,15 @@
   <a class="btn btn-primary" href="/tasks/new">Nueva tarea</a>
 </div>
 
-{% if running %}
-<p class="section-title">En ejecución</p>
+{% if active %}
+<p class="section-title">Activas</p>
 <div class="card" style="padding:0; overflow:hidden;">
   <table>
     <thead>
-      <tr>
-        <th>Nombre</th><th>Sandbox</th><th>Estado</th><th>Creada</th><th></th>
-      </tr>
+      <tr><th>Nombre</th><th>Sandbox</th><th>Estado</th><th>Creada</th><th></th></tr>
     </thead>
     <tbody>
-      {% for task in running %}{{ task_row(task) }}{% endfor %}
+      {% for task in active %}{{ task_row(task) }}{% endfor %}
     </tbody>
   </table>
 </div>
@@ -67,9 +65,7 @@
 <div class="card" style="padding:0; overflow:hidden;">
   <table>
     <thead>
-      <tr>
-        <th>Nombre</th><th>Sandbox</th><th>Estado</th><th>Creada</th><th></th>
-      </tr>
+      <tr><th>Nombre</th><th>Sandbox</th><th>Estado</th><th>Creada</th><th></th></tr>
     </thead>
     <tbody>
       {% for task in other %}{{ task_row(task) }}{% endfor %}

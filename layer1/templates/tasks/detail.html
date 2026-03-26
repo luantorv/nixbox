@@ -33,16 +33,19 @@
   </div>
 
   <div class="btn-row" style="margin-top:0;">
-    {% if task.status == 'running' %}
+    {% set active_statuses = ['planning', 'awaiting_approval', 'running'] %}
+    {% if task.status in active_statuses %}
       <form method="post" action="/tasks/{{ task.id }}/stop">
         <button class="btn btn-warn">Parar</button>
       </form>
-    {% else %}
+    {% elif task.status in ['pending', 'completed', 'failed'] %}
       <form method="post" action="/tasks/{{ task.id }}/run">
         <button class="btn btn-primary">Ejecutar</button>
       </form>
     {% endif %}
-    <a class="btn btn-ghost" href="/tasks/{{ task.id }}/schedule">Programar</a>
+    {% if task.status not in active_statuses %}
+      <a class="btn btn-ghost" href="/tasks/{{ task.id }}/schedule">Programar</a>
+    {% endif %}
     <form method="post" action="/tasks/{{ task.id }}/delete"
           onsubmit="return confirm('Eliminar tarea «{{ task.name }}»?')">
       <button class="btn btn-danger">Eliminar</button>
@@ -55,17 +58,91 @@
   <a class="btn btn-ghost" href="/tasks/{{ task.id }}/outputs">Outputs</a>
   <a class="btn btn-ghost" href="/tasks/{{ task.id }}/logs">Logs</a>
   {% if task.status == 'running' %}
-    <a class="btn btn-ghost" href="/tasks/{{ task.id }}/logs/stream">Stream</a>
+    <a class="btn btn-primary" href="/tasks/{{ task.id }}/logs/stream">Stream en vivo</a>
   {% endif %}
 </div>
 
-<p class="section-title">Historial de interacciones</p>
+{# ---- Fase de planificación ---- #}
+{% if task.status in ['planning', 'awaiting_approval'] %}
 
-{% if interactions %}
-  {% for interaction in interactions %}
-  <div class="card" style="margin-bottom:0.5rem; border-color: {% if interaction.role == 'user' %}var(--border){% else %}var(--accent){% endif %}20;">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
-      <span style="font-size:0.78rem; font-weight:600; color: {% if interaction.role == 'user' %}var(--text){% else %}var(--accent){% endif %};">
+  <p class="section-title">Plan de acción</p>
+
+  {% if task.status == 'planning' %}
+    <div class="card" style="border-color: var(--accent)30;">
+      <div style="display:flex; align-items:center; gap:0.5rem; color:var(--accent); font-size:0.85rem;">
+        <span style="animation: pulse 1.5s infinite;">●</span>
+        Generando plan…
+      </div>
+    </div>
+    <style>
+      @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    </style>
+    <script>setTimeout(() => location.reload(), 3000);</script>
+
+  {% elif task.status == 'awaiting_approval' and current_plan %}
+    <div class="card" style="border-color: var(--warn)40;">
+      <div style="font-size:0.78rem; color:var(--warn); margin-bottom:0.75rem; font-weight:600;">
+        Esperando tu aprobación
+      </div>
+      <div class="markdown-plan">{{ current_plan }}</div>
+    </div>
+
+    <div class="btn-row">
+      <form method="post" action="/tasks/{{ task.id }}/approve">
+        <button class="btn btn-primary">Aprobar y ejecutar</button>
+      </form>
+    </div>
+
+    <p class="section-title" style="margin-top:1.25rem;">Pedir cambios al plan</p>
+    <div class="card">
+      <form method="post" action="/tasks/{{ task.id }}/revise">
+        <div class="field">
+          <textarea name="feedback" required
+            placeholder="Describí qué cambios necesita el plan…"></textarea>
+        </div>
+        <button type="submit" class="btn btn-ghost">Enviar feedback</button>
+      </form>
+    </div>
+  {% endif %}
+
+  {# Historial de revisiones #}
+  {% if planning | length > 2 %}
+  <p class="section-title" style="margin-top:1.25rem;">Historial de revisiones</p>
+  {% for interaction in planning %}
+    {% if not loop.first %}
+    <div class="card" style="margin-bottom:0.4rem; border-color: {% if interaction.role == 'user' %}var(--border){% else %}var(--accent)20{% endif %};">
+      <div style="display:flex; justify-content:space-between; margin-bottom:0.4rem;">
+        <span style="font-size:0.78rem; font-weight:600; color:{% if interaction.role == 'user' %}var(--text){% else %}var(--accent){% endif %};">
+          {{ 'Usuario' if interaction.role == 'user' else 'Orquestador' }}
+        </span>
+        <span style="font-size:0.75rem; color:var(--muted);">{{ interaction.created_at.strftime('%H:%M:%S') }}</span>
+      </div>
+      <p style="font-size:0.83rem; line-height:1.6; white-space:pre-wrap; color:var(--muted);">{{ interaction.content[:400] }}{% if interaction.content|length > 400 %}…{% endif %}</p>
+    </div>
+    {% endif %}
+  {% endfor %}
+  {% endif %}
+
+{# ---- Fase de ejecución / completada ---- #}
+{% else %}
+
+  {% if current_plan %}
+  <details style="margin-bottom:1rem;">
+    <summary style="cursor:pointer; font-size:0.82rem; color:var(--muted); padding:0.4rem 0;">
+      Ver plan aprobado
+    </summary>
+    <div class="card" style="margin-top:0.5rem;">
+      <div class="markdown-plan">{{ current_plan }}</div>
+    </div>
+  </details>
+  {% endif %}
+
+  {% if execution %}
+  <p class="section-title">Interacciones de ejecución</p>
+  {% for interaction in execution %}
+  <div class="card" style="margin-bottom:0.4rem;">
+    <div style="display:flex; justify-content:space-between; margin-bottom:0.4rem;">
+      <span style="font-size:0.78rem; font-weight:600; color:{% if interaction.role == 'user' %}var(--text){% else %}var(--accent){% endif %};">
         {{ 'Usuario' if interaction.role == 'user' else 'Agente' }}
       </span>
       <span style="font-size:0.75rem; color:var(--muted);">{{ interaction.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</span>
@@ -73,20 +150,29 @@
     <p style="font-size:0.85rem; line-height:1.6; white-space:pre-wrap;">{{ interaction.content }}</p>
   </div>
   {% endfor %}
-{% else %}
-  <p class="empty">Sin interacciones aún.</p>
+  {% endif %}
+
+  {# Prompt adicional solo cuando la tarea no está activa #}
+  {% if task.status in ['completed', 'failed', 'cancelled'] %}
+  <p class="section-title" style="margin-top:1.5rem;">Enviar prompt adicional</p>
+  <div class="card">
+    <form method="post" action="/tasks/{{ task.id }}/prompt">
+      <div class="field">
+        <textarea name="content" required
+          placeholder="Continuar, corregir o expandir la tarea…"></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary">Enviar y ejecutar</button>
+    </form>
+  </div>
+  {% endif %}
+
 {% endif %}
 
-{% if task.status != 'running' %}
-<p class="section-title" style="margin-top:1.5rem;">Enviar prompt</p>
-<div class="card">
-  <form method="post" action="/tasks/{{ task.id }}/prompt">
-    <div class="field">
-      <textarea name="content" required
-        placeholder="Continuar, corregir o expandir la tarea…"></textarea>
-    </div>
-    <button type="submit" class="btn btn-primary">Enviar y ejecutar</button>
-  </form>
-</div>
-{% endif %}
+<style>
+  .markdown-plan { font-size:0.85rem; line-height:1.7; }
+  .markdown-plan h2 { font-size:0.9rem; font-weight:600; margin:0.75rem 0 0.3rem; color:var(--text); }
+  .markdown-plan ul, .markdown-plan ol { padding-left:1.25rem; margin:0.3rem 0; }
+  .markdown-plan li { margin-bottom:0.2rem; }
+  .markdown-plan p { margin:0.3rem 0; }
+</style>
 {% endblock %}
