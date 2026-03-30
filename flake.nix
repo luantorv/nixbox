@@ -60,8 +60,8 @@
                       };
                     };
                   };
-                  allowedDomains  = lib.mkOption { type = lib.types.listOf lib.types.str; default = []; };
-                  allowedActions  = lib.mkOption { type = lib.types.listOf lib.types.str; default = []; };
+                  allowedDomains   = lib.mkOption { type = lib.types.listOf lib.types.str; default = []; };
+                  allowedActions   = lib.mkOption { type = lib.types.listOf lib.types.str; default = []; };
                   allowedLanguages = lib.mkOption {
                     type = lib.types.listOf lib.types.str;
                     default = [ "python" "javascript" ];
@@ -90,11 +90,11 @@
               wantedBy = [ "multi-user.target" ];
 
               environment = {
-                NIXBOX_DATA_DIR  = cfg.dataDir;
+                NIXBOX_DATA_DIR   = cfg.dataDir;
                 NIXBOX_TOKEN_FILE = cfg.tokenFile;
-                NIXBOX_HOST      = cfg.host;
-                NIXBOX_PORT      = toString cfg.port;
-                NIXBOX_PROFILES  = builtins.toJSON (
+                NIXBOX_HOST       = cfg.host;
+                NIXBOX_PORT       = toString cfg.port;
+                NIXBOX_PROFILES   = builtins.toJSON (
                   lib.mapAttrs (_: p: {
                     orchestrator_model = { inherit (p.orchestratorModel) provider model; };
                     executor_model     = { inherit (p.executorModel) provider model; };
@@ -132,17 +132,34 @@
         pkgs = nixpkgs.legacyPackages.${system};
         python = pkgs.python312;
 
+        # google-genai no está en nixpkgs 25.11, se empaqueta desde PyPI
+        google-genai = python.pkgs.buildPythonPackage rec {
+          pname = "google-genai";
+          version = "1.10.0";
+          pyproject = true;
+          build-system = with python.pkgs; [ setuptools ];
+          src = python.pkgs.fetchPypi {
+            inherit pname version;
+            hash = "sha256-1ln6m61r884lznnykxq09yjclh25hbbfja0w3jkdxxnlrf27j6xf";
+          };
+          dependencies = with python.pkgs; [
+            anyio
+            google-auth
+            httpx
+            pydantic
+            requests
+            typing-extensions
+            websockets
+          ];
+          doCheck = false;
+        };
+
         nixboxPkg = python.pkgs.buildPythonPackage {
           pname = "nixbox";
           version = "0.1.0";
           pyproject = true;
-
           src = ./.;
-
-          build-system = with python.pkgs; [
-            setuptools
-          ];
-
+          build-system = with python.pkgs; [ setuptools ];
           dependencies = with python.pkgs; [
             fastapi
             uvicorn
@@ -155,8 +172,8 @@
             httpx
             anthropic
             openai
-            google-generativeai
             markdown-it-py
+            google-genai
           ];
 
           meta = {
@@ -182,11 +199,10 @@
               httpx
               anthropic
               openai
-              google-generativeai
               markdown-it-py
+              google-genai
               pytest
               pytest-asyncio
-              httpx
             ]))
             pkgs.nodejs_22
           ];

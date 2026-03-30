@@ -19,7 +19,6 @@ dependencies = [
     "httpx",
     "anthropic",
     "openai",
-    "google-genai",
     "markdown-it-py",
 ]
 
