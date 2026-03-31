@@ -6,8 +6,8 @@ from apscheduler.triggers.cron import CronTrigger
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from nixbox.database import get_engine
-from nixbox.models import Interaction, Recurrence, Task, TaskStatus
+from layer1.database import get_engine
+from layer1.models import Interaction, Recurrence, Task, TaskStatus
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +24,7 @@ async def _launch_task(task_id: int) -> None:
     """
     from sqlmodel.ext.asyncio.session import AsyncSession
 
-    from nixbox.sandbox import run_task
+    from layer1.sandbox import run_task
 
     async with AsyncSession(get_engine(), expire_on_commit=False) as session:
         task = await session.get(Task, task_id)
@@ -107,7 +107,7 @@ async def _launch_recurrent(recurrence_id: int) -> None:
         await session.commit()
 
         new_task.interactions = [first_interaction] if first_interaction else []
-        from nixbox.sandbox import run_task
+        from layer1.sandbox import run_task
         await run_task(new_task, session)
 
 # ---------------------------------------------------------------------------

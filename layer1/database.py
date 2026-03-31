@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from sqlmodel import SQLModel
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from nixbox.config import settings
+from layer1.config import settings
 
 _engine: AsyncEngine | None = None
 
