@@ -134,7 +134,7 @@
 
         # google-genai no está en nixpkgs 25.11, se empaqueta desde PyPI
         google-genai = python.pkgs.buildPythonPackage rec {
-          pname = "google-genai";
+          pname = "google_genai";
           version = "1.10.0";
           pyproject = true;
           build-system = with python.pkgs; [ setuptools ];
