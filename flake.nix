@@ -137,7 +137,7 @@
           pname = "google_genai";
           version = "1.10.0";
           pyproject = true;
-          build-system = with python.pkgs; [ setuptools ];
+          build-system = with python.pkgs; [ setuptools twine ];
           src = python.pkgs.fetchPypi {
             inherit pname version;
             hash = "sha256-9ZQj4PFV3Ga3eSyKDmckx1xy3GmdHreQfU0ABtT2GG8=";
