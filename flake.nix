@@ -140,7 +140,7 @@
           build-system = with python.pkgs; [ setuptools ];
           src = python.pkgs.fetchPypi {
             inherit pname version;
-            hash = "sha256-1ln6m61r884lznnykxq09yjclh25hbbfja0w3jkdxxnlrf27j6xf";
+            hash = "sha256-rht5hMvU9t6mHBwo6daCRUDKpE8A9+mt/ZQglIOpxtI=";
           };
           dependencies = with python.pkgs; [
             anyio
