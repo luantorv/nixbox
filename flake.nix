@@ -173,6 +173,7 @@
             anthropic
             openai
             markdown-it-py
+            jinja2
             google-genai
           ];
 
@@ -200,6 +201,7 @@
               anthropic
               openai
               markdown-it-py
+              jinja2
               google-genai
               pytest
               pytest-asyncio
