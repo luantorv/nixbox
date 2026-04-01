@@ -129,25 +129,23 @@ async def api_stats():
 
 @app.get("/tasks", response_class=HTMLResponse)
 async def tasks_list(request: Request, session: AsyncSession = Depends(get_session)):
-    active_statuses = [
+    all_result = await session.exec(
+        select(Task).order_by(Task.created_at.desc())
+    )
+    all_tasks = all_result.all()
+
+    active_statuses = {
         TaskStatus.planning,
         TaskStatus.awaiting_approval,
         TaskStatus.running,
-    ]
-    active_result = await session.exec(
-        select(Task)
-        .where(Task.status.in_(active_statuses))
-        .order_by(Task.created_at.desc())
-    )
-    other_result = await session.exec(
-        select(Task)
-        .where(Task.status.not_in(active_statuses))
-        .order_by(Task.created_at.desc())
-    )
+    }
+    active = [t for t in all_tasks if t.status in active_statuses]
+    other  = [t for t in all_tasks if t.status not in active_statuses]
+
     return templates.TemplateResponse("tasks/list.html", {
         "request": request,
-        "active": active_result.all(),
-        "other": other_result.all(),
+        "active": active,
+        "other": other,
     })
 
 
