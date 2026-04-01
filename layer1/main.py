@@ -129,10 +129,8 @@ async def api_stats():
 
 @app.get("/tasks", response_class=HTMLResponse)
 async def tasks_list(request: Request, session: AsyncSession = Depends(get_session)):
-    all_result = await session.exec(
-        select(Task).order_by(Task.created_at.desc())
-    )
-    all_tasks = all_result.all()
+    result = await session.execute(select(Task).order_by(Task.created_at.desc()))
+    all_tasks = result.scalars().all()
 
     active_statuses = {
         TaskStatus.planning,
